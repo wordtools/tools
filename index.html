@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字處理工具</title>
+    <style>
+        .green-divider {
+            color: green;
+            font-weight: bold;
+        }
+        .button-row {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>文字處理工具</h1>
+    <textarea id="inputText" rows="10" cols="50" placeholder="輸入文字..."></textarea><br>
+
+    <!-- 第一行按鈕 -->
+    <div class="button-row">
+        <button id="addBlankLineAndTwoSpaces">空行+兩格空白</button>
+        <button id="addTwoSpaces">兩格空白</button>
+        <button id="clearTextButton">清除文字格式</button>
+        <button id="copyAllButton">全選複製</button>
+    </div>
+
+    <!-- 第二行按鈕 -->
+    <div class="button-row">
+        <button id="addPrefixAndSplit">新增[Space]並分割段落</button>
+        <button id="splitWithoutPrefix">分割段落</button>
+        <button id="copyTextButton">逐段複製</button>
+    </div>
+
+    <div id="output" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px; white-space: pre-wrap;"></div>
+
+<script>
+    let currentParagraphIndex = 0; // 用於追踪當前要複製的段落
+    let paragraphs = []; // 用於存儲段落內容
+
+    // 分割段落（通用函數）
+    function splitTextIntoParagraphs(inputText, addPrefix) {
+        let result = "";
+        let currentParagraph = "";
+        let paragraphCount = 1; // 用於計算段落編號
+
+        paragraphs = []; // 重置段落內容儲存
+        currentParagraphIndex = 0; // 每次重新分段時，重置段落索引
+
+        inputText.split("\n").forEach(line => {
+            if ((currentParagraph + line).length <= 360) {
+                currentParagraph += line + "\n";
+            } else {
+                // 超過360字，結束當前段落
+                paragraphs.push(currentParagraph.trim());
+                result += currentParagraph.trim() +
+                    `\n\n<span class="green-divider">----第${paragraphCount}段----</span>\n\n`;
+                paragraphCount++;
+                currentParagraph = line + "\n";
+            }
+        });
+
+        // 加入最後一段
+        if (currentParagraph) {
+            paragraphs.push(currentParagraph.trim());
+            result += currentParagraph.trim() +
+                `\n\n<span class="green-divider">----第${paragraphCount}段----</span>`;
+        }
+
+        document.getElementById("output").innerHTML = result.replace(/\n/g, "<br>");
+    }
+    
+     // 空行+兩格空白
+        document.getElementById("addBlankLineAndTwoSpaces").addEventListener("click", function() {
+            const inputText = document.getElementById("inputText").value;
+            const lines = inputText.split("\n");
+            const result = lines.map(line => `　　${line}`).join("\n\n");
+            document.getElementById("output").innerHTML = result.replace(/\n/g, "<br>");
+        });
+
+        // 兩格空白
+        document.getElementById("addTwoSpaces").addEventListener("click", function() {
+            const inputText = document.getElementById("inputText").value;
+            const lines = inputText.split("\n");
+            const result = lines.map(line => `　　${line}`).join("\n");
+            document.getElementById("output").innerHTML = result.replace(/\n/g, "<br>");
+        });
+        
+        
+    // 分割段落按鈕（新增[Space]並分割）
+    document.getElementById("addPrefixAndSplit").addEventListener("click", function () {
+        const inputText = document.getElementById("inputText").value;
+
+        // 1. 每行開頭加[Space]並加入空行
+        const linesWithPrefixAndBlank = inputText.split("\n")
+            .map(line => `[Space] ${line}`).join("\n\n");
+
+        // 2. 分割段落
+        splitTextIntoParagraphs(linesWithPrefixAndBlank, true);
+    });
+
+    // 分割段落按鈕（不新增[Space]）
+    document.getElementById("splitWithoutPrefix").addEventListener("click", function () {
+        const inputText = document.getElementById("inputText").value;
+        splitTextIntoParagraphs(inputText, false);
+    });
+
+    // 逐段複製
+    document.getElementById("copyTextButton").addEventListener("click", function () {
+        if (paragraphs.length === 0) {
+            alert("尚未分割段落，請先使用分割功能！");
+            return;
+        }
+
+        // 獲取當前段落內容
+        const currentParagraph = paragraphs[currentParagraphIndex];
+        navigator.clipboard.writeText(currentParagraph).then(() => {
+            alert(`已複製第 ${currentParagraphIndex + 1} 段內容！`);
+            currentParagraphIndex = (currentParagraphIndex + 1) % paragraphs.length; // 下一段，循環處理
+        }).catch(err => {
+            console.error("複製失敗：", err);
+            alert("複製失敗，請重試！");
+        });
+    });
+
+    // 清除文字格式
+    document.getElementById("clearTextButton").addEventListener("click", function () {
+        const inputText = document.getElementById("inputText").value;
+        const lines = inputText.split("\n").map(line => line.trim()).filter(line => line !== "");
+        const result = lines.join("\n");
+        document.getElementById("inputText").value = result; // 更新文字區域
+        document.getElementById("output").innerHTML = result.replace(/\n/g, "<br>");
+    });
+
+    // 全選複製
+    document.getElementById("copyAllButton").addEventListener("click", function () {
+        const outputElement = document.getElementById("output");
+        const outputText = outputElement.innerText; // 獲取結果區域的文字內容
+
+        navigator.clipboard.writeText(outputText).then(() => {
+            alert("已複製所有內容！");
+        }).catch(err => {
+            console.error("複製失敗：", err);
+            alert("複製失敗，請重試！");
+        });
+    });
+</script>
+
+
+</body>
+</html>
